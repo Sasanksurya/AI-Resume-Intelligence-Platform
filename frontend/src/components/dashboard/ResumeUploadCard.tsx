@@ -1,72 +1,71 @@
 "use client";
 
 import { useState } from "react";
-import { Upload, FileText } from "lucide-react";
+import toast from "react-hot-toast";
+
 import { uploadResume } from "@/lib/api";
+import ResumeDropzone from "@/components/resume/ResumeDropzone";
 
 export default function ResumeUploadCard() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState("");
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      setMessage("Please select a PDF file.");
+      toast.error("Please select a PDF resume.");
       return;
     }
+
+    const loadingToast = toast.loading("Uploading resume...");
 
     try {
       setUploading(true);
 
       const result = await uploadResume(selectedFile);
 
-      setMessage(result.message);
+      toast.dismiss(loadingToast);
+
+      toast.success(
+        result.message || "Resume uploaded successfully!"
+      );
+
+      setSelectedFile(null);
     } catch (error) {
       console.error(error);
-      setMessage("Upload failed.");
+
+      toast.dismiss(loadingToast);
+
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="bg-slate-900 rounded-2xl p-8 shadow-lg">
-      <h2 className="text-2xl font-bold text-white mb-6">
+    <div className="rounded-2xl bg-slate-900 p-8 shadow-xl">
+
+      <h2 className="mb-6 text-3xl font-bold text-white">
         Upload Resume
       </h2>
 
-      <div className="border-2 border-dashed border-cyan-500 rounded-xl p-10 text-center">
+      <ResumeDropzone
+        onFileSelect={(file) => {
+          setSelectedFile(file);
+        }}
+      />
 
-        <Upload className="mx-auto h-16 w-16 text-cyan-400 mb-4" />
-
-        <input
-          type="file"
-          accept=".pdf"
-          onChange={(e) =>
-            setSelectedFile(e.target.files?.[0] || null)
-          }
-          className="mb-6"
-        />
-
-        {selectedFile && (
-          <div className="flex items-center justify-center gap-2 text-cyan-400 mb-4">
-            <FileText />
-            <span>{selectedFile.name}</span>
-          </div>
-        )}
+      <div className="mt-6 flex justify-center">
 
         <button
           onClick={handleUpload}
-          disabled={uploading}
-          className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition"
+          disabled={uploading || !selectedFile}
+          className="rounded-lg bg-cyan-500 px-8 py-3 font-semibold text-white transition-all duration-300 hover:bg-cyan-600 hover:scale-105 disabled:cursor-not-allowed disabled:bg-gray-500 disabled:hover:scale-100"
         >
-          {uploading ? "Uploading..." : "Upload Resume"}
+          {uploading ? "Uploading Resume..." : "Upload Resume"}
         </button>
 
-        {message && (
-          <p className="mt-4 text-green-400">{message}</p>
-        )}
       </div>
+
     </div>
   );
 }

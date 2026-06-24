@@ -2,6 +2,7 @@ import ATSScoreCard from "./ATSScoreCard";
 import MatchedSkills from "./MatchedSkills";
 import MissingSkills from "./MissingSkills";
 import Suggestions from "./Suggestions";
+import { generateATSReport } from "@/utils/generateATSReport";
 
 interface ATSResultProps {
   result: {
@@ -23,6 +24,15 @@ export default function ATSResult({ result }: ATSResultProps) {
     );
   }
 
+  const handleDownload = () => {
+    generateATSReport({
+      score: result.ats_score,
+      matchedSkills: result.matched_skills,
+      missingSkills: result.missing_skills,
+      suggestions: result.suggestions,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <ATSScoreCard score={result.ats_score} />
@@ -32,6 +42,13 @@ export default function ATSResult({ result }: ATSResultProps) {
       <MissingSkills skills={result.missing_skills} />
 
       <Suggestions suggestions={result.suggestions} />
+
+      <button
+        onClick={handleDownload}
+        className="w-full rounded-lg bg-blue-600 px-4 py-3 text-white font-semibold transition hover:bg-blue-700"
+      >
+        📄 Download ATS Report
+      </button>
     </div>
   );
 }

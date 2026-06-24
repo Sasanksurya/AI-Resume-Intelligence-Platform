@@ -39,20 +39,56 @@ export default function ATSForm({ onResult }: ATSFormProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <textarea
-        className="w-full rounded-lg border border-gray-300 p-4 h-56 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        placeholder="Paste the Job Description here..."
-        value={jobDescription}
-        onChange={(e) => setJobDescription(e.target.value)}
-      />
+    <div className="space-y-6">
+      {/* Job Description Input */}
+      <div>
+        <label className="mb-2 block text-lg font-semibold text-white">
+          Job Description
+        </label>
 
+        <textarea
+          value={jobDescription}
+          onChange={(e) => setJobDescription(e.target.value)}
+          placeholder="Paste the complete Job Description here..."
+          className="
+            w-full
+            h-64
+            rounded-xl
+            border
+            border-gray-600
+            bg-slate-900
+            text-white
+            placeholder:text-gray-400
+            p-4
+            text-sm
+            resize-none
+            focus:outline-none
+            focus:ring-2
+            focus:ring-blue-500
+            focus:border-blue-500
+          "
+        />
+      </div>
+
+      {/* Analyze Button */}
       <button
         onClick={handleAnalyze}
         disabled={loading}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg disabled:bg-gray-400"
+        className="
+          rounded-lg
+          bg-blue-600
+          px-8
+          py-3
+          font-semibold
+          text-white
+          transition-all
+          duration-300
+          hover:bg-blue-700
+          disabled:cursor-not-allowed
+          disabled:bg-gray-500
+        "
       >
-        {loading ? "Analyzing..." : "Analyze ATS"}
+        {loading ? "Analyzing ATS..." : "Analyze ATS"}
       </button>
     </div>
   );

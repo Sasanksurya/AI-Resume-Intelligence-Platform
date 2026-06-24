@@ -1,13 +1,14 @@
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+client = genai.Client(
+    api_key=os.getenv("GOOGLE_API_KEY")
+)
 
-print("===== EMBEDDING MODELS =====")
+print("Connection successful!")
 
-for model in genai.list_models():
-    if "embed" in model.name.lower():
-        print(model.name)
+for model in client.models.list():
+    print(model.name)

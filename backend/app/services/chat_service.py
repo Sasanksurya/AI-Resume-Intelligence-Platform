@@ -1,4 +1,6 @@
 import os
+import time
+
 from dotenv import load_dotenv
 from google import genai
 
@@ -9,24 +11,20 @@ load_dotenv()
 
 class ChatService:
 
-    # Create Gemini client
     client = genai.Client(
         api_key=os.getenv("GOOGLE_API_KEY")
     )
 
     @staticmethod
     def ask(question: str):
-        # Search relevant resume chunks
+
         docs = RAGService.search(question)
 
-        # If no documents are found
         if not docs:
-            return "No resume has been uploaded or no relevant information was found."
+            return "No relevant resume information found."
 
-        # Combine retrieved chunks
         context = "\n\n".join(doc.page_content for doc in docs)
 
-        # Prompt for Gemini
         prompt = f"""
 You are an AI Resume Assistant.
 
@@ -45,14 +43,23 @@ Rules:
 3. Do not make up information.
 """
 
-        try:
-            # Generate response
-            response = ChatService.client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
+        retries = 3
 
-            return response.text
+        for attempt in range(retries):
+            try:
+                response = ChatService.client.models.generate_content(
+                    model="gemini-2.5-flash",
+                    contents=prompt,
+                )
 
-        except Exception as e:
-            return f"Gemini API Error: {str(e)}"
+                return response.text
+
+            except Exception as e:
+
+                error = str(e)
+
+                if "503" in error and attempt < retries - 1:
+                    time.sleep(5)
+                    continue
+
+                return f"Gemini API Error: {error}"

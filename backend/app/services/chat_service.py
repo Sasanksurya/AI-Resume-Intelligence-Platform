@@ -19,8 +19,12 @@ class ChatService:
         # Search relevant resume chunks
         docs = RAGService.search(question)
 
-        # Combine retrieved chunks into context
-        context = "\n\n".join([doc.page_content for doc in docs])
+        # If no documents are found
+        if not docs:
+            return "No resume has been uploaded or no relevant information was found."
+
+        # Combine retrieved chunks
+        context = "\n\n".join(doc.page_content for doc in docs)
 
         # Prompt for Gemini
         prompt = f"""
@@ -41,10 +45,14 @@ Rules:
 3. Do not make up information.
 """
 
-        # Generate response
-        response = ChatService.client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
+        try:
+            # Generate response
+            response = ChatService.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
 
-        return response.text
+            return response.text
+
+        except Exception as e:
+            return f"Gemini API Error: {str(e)}"

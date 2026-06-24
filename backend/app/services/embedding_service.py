@@ -4,12 +4,13 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
+print("GOOGLE_API_KEY =", os.getenv("GOOGLE_API_KEY"))
 
 class EmbeddingService:
 
     embeddings = GoogleGenerativeAIEmbeddings(
         model="models/gemini-embedding-001",
-        google_api_key=os.getenv("GOOGLE_API_KEY")
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
     )
 
     @staticmethod

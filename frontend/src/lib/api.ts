@@ -1,4 +1,6 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://ai-resume-intelligence-platform-82el.onrender.com";
 
 export async function getHealth() {
   const response = await fetch(`${API_URL}/health`);

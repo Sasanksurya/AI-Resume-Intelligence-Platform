@@ -9,7 +9,9 @@ load_dotenv()
 
 class ChatService:
 
-    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+    Client = genai.Client(
+    api_key=os.getenv("GOOGLE_API_KEY")
+)
 
     @staticmethod
     def ask(question: str):

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { analyzeATS } from "@/services/api";
+import { analyzeATS } from "@/lib/api";
 
 interface ATSResult {
   ats_score: number;

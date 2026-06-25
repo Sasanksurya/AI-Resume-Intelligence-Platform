@@ -19,7 +19,17 @@ class ATSService:
     @staticmethod
     def analyze(job_description: str):
 
-        docs = RAGService.search(job_description)
+        try:
+            docs = RAGService.search(job_description)
+        except Exception as e:
+            return {
+                "ats_score": 0,
+                "matched_skills": [],
+                "missing_skills": [],
+                "suggestions": [
+                    f"Vector search failed: {str(e)}"
+                ]
+            }
 
         if not docs:
             return {
@@ -27,7 +37,7 @@ class ATSService:
                 "matched_skills": [],
                 "missing_skills": [],
                 "suggestions": [
-                    "No resume has been uploaded."
+                    "No resume uploaded or no resume found in the vector database."
                 ]
             }
 
@@ -36,7 +46,7 @@ class ATSService:
         prompt = f"""
 You are an ATS Resume Analyzer.
 
-Compare the resume with the Job Description.
+Compare the Resume and the Job Description.
 
 Resume:
 {context}
@@ -44,28 +54,22 @@ Resume:
 Job Description:
 {job_description}
 
-Return ONLY valid JSON in this exact format.
+Return ONLY valid JSON.
+
+Example:
 
 {{
-    "ats_score": 85,
-    "matched_skills": [
-        "Python",
-        "FastAPI"
-    ],
-    "missing_skills": [
-        "Docker",
-        "AWS"
-    ],
-    "suggestions": [
-        "Add Docker experience.",
-        "Mention AWS projects.",
-        "Include more measurable achievements."
-    ]
+  "ats_score":85,
+  "matched_skills":["Python","FastAPI"],
+  "missing_skills":["AWS","Docker"],
+  "suggestions":[
+      "Mention Docker experience.",
+      "Add AWS projects.",
+      "Quantify achievements."
+  ]
 }}
 
 Return ONLY JSON.
-Do not use markdown.
-Do not explain anything.
 """
 
         retries = 3
@@ -83,10 +87,18 @@ Do not explain anything.
 
                 if text.startswith("```json"):
                     text = text.replace("```json", "").replace("```", "").strip()
+
                 elif text.startswith("```"):
                     text = text.replace("```", "").strip()
 
-                return json.loads(text)
+                data = json.loads(text)
+
+                return {
+                    "ats_score": int(data.get("ats_score", 0)),
+                    "matched_skills": data.get("matched_skills", []),
+                    "missing_skills": data.get("missing_skills", []),
+                    "suggestions": data.get("suggestions", [])
+                }
 
             except json.JSONDecodeError:
 
@@ -95,7 +107,7 @@ Do not explain anything.
                     "matched_skills": [],
                     "missing_skills": [],
                     "suggestions": [
-                        "Gemini returned an invalid response. Please try again."
+                        "Gemini returned invalid JSON."
                     ]
                 }
 
@@ -103,39 +115,24 @@ Do not explain anything.
 
                 error = str(e)
 
-                # Retry on temporary server errors
                 if "503" in error and attempt < retries - 1:
                     time.sleep(5)
                     continue
 
-                # Quota exceeded
-                if "429" in error or "RESOURCE_EXHAUSTED" in error:
-                    return {
-                        "ats_score": 0,
-                        "matched_skills": [],
-                        "missing_skills": [],
-                        "suggestions": [
-                            "Gemini API quota exceeded. Please try again later or use a new API key."
-                        ]
-                    }
-
-                # Authentication issues
-                if "API_KEY" in error or "401" in error:
-                    return {
-                        "ats_score": 0,
-                        "matched_skills": [],
-                        "missing_skills": [],
-                        "suggestions": [
-                            "Invalid Gemini API key. Please check your .env file."
-                        ]
-                    }
-
-                # Generic error
                 return {
                     "ats_score": 0,
                     "matched_skills": [],
                     "missing_skills": [],
                     "suggestions": [
-                        f"Unexpected Error: {error}"
+                        error
                     ]
                 }
+
+        return {
+            "ats_score": 0,
+            "matched_skills": [],
+            "missing_skills": [],
+            "suggestions": [
+                "Unknown ATS error."
+            ]
+        }

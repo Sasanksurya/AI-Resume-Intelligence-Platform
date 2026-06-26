@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.upload import router as upload_router
 from app.api.chat import router as chat_router
 from app.api.ats import router as ats_router
+from app.api.resume_summary import router as resume_summary_router
+from app.api.interview import router as interview_router
+from app.api.improve import router as improve_router
 
 app = FastAPI(
     title="AI Resume Intelligence Platform",
@@ -11,18 +14,18 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# ----------------------------------------
+# -------------------------------------------------
 # CORS Configuration
-# ----------------------------------------
+# -------------------------------------------------
+
 origins = [
-    # Local Development
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 
-    # Your Vercel Production URL
+    # Production
     "https://ai-resume-intelligence-platform-coral.vercel.app",
 
-    # Your Vercel Preview Deployment
+    # Preview Deployment
     "https://ai-resume-intelligence-platform-l5cpolit3-surya-s-projects8.vercel.app",
 ]
 
@@ -34,13 +37,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ----------------------------------------
-# Register API Routers
-# ----------------------------------------
+# -------------------------------------------------
+# Register Routers
+# -------------------------------------------------
+
 app.include_router(
     upload_router,
     prefix="/api",
     tags=["Upload"],
+)
+
+app.include_router(
+    resume_summary_router,
+    prefix="/api",
+    tags=["Resume Summary"],
 )
 
 app.include_router(
@@ -55,9 +65,22 @@ app.include_router(
     tags=["ATS"],
 )
 
-# ----------------------------------------
-# Home Route
-# ----------------------------------------
+app.include_router(
+    interview_router,
+    prefix="/api",
+    tags=["Interview"],
+)
+
+app.include_router(
+    improve_router,
+    prefix="/api",
+    tags=["Resume Improvement"],
+)
+
+# -------------------------------------------------
+# Root Endpoint
+# -------------------------------------------------
+
 @app.get("/")
 def home():
     return {
@@ -65,11 +88,12 @@ def home():
         "version": "1.0.0",
     }
 
-# ----------------------------------------
+# -------------------------------------------------
 # Health Check
-# ----------------------------------------
+# -------------------------------------------------
+
 @app.get("/health")
 def health():
     return {
-        "status": "healthy",
+        "status": "healthy"
     }

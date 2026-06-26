@@ -14,32 +14,27 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# -------------------------------------------------
+# ============================================================
 # CORS Configuration
-# -------------------------------------------------
+# ============================================================
 
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-
-    # Production
-    "https://ai-resume-intelligence-platform-coral.vercel.app",
-
-    # Preview Deployment
-    "https://ai-resume-intelligence-platform-l5cpolit3-surya-s-projects8.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# -------------------------------------------------
-# Register Routers
-# -------------------------------------------------
+# ============================================================
+# Register API Routers
+# ============================================================
 
 app.include_router(
     upload_router,
@@ -56,13 +51,13 @@ app.include_router(
 app.include_router(
     chat_router,
     prefix="/api",
-    tags=["Chat"],
+    tags=["AI Chat"],
 )
 
 app.include_router(
     ats_router,
     prefix="/api",
-    tags=["ATS"],
+    tags=["ATS Analysis"],
 )
 
 app.include_router(
@@ -77,23 +72,25 @@ app.include_router(
     tags=["Resume Improvement"],
 )
 
-# -------------------------------------------------
+# ============================================================
 # Root Endpoint
-# -------------------------------------------------
+# ============================================================
 
 @app.get("/")
-def home():
+async def root():
     return {
         "message": "AI Resume Intelligence Platform API is Running 🚀",
         "version": "1.0.0",
+        "status": "online",
     }
 
-# -------------------------------------------------
+# ============================================================
 # Health Check
-# -------------------------------------------------
+# ============================================================
 
 @app.get("/health")
-def health():
+async def health():
     return {
-        "status": "healthy"
+        "status": "healthy",
+        "service": "AI Resume Intelligence Platform",
     }

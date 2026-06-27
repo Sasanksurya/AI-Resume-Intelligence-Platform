@@ -19,14 +19,12 @@ class ChatService:
     @staticmethod
     def ask(question: str):
 
-        # Try FAISS first
         docs = RAGService.search(question)
         context = ""
 
         if docs:
             context = "\n\n".join(doc.page_content for doc in docs)
         else:
-            # Fallback: use full resume text saved on disk
             context = VectorStoreService.load_resume_text()
 
         if not context.strip():
@@ -54,7 +52,7 @@ Rules:
         for attempt in range(retries):
             try:
                 response = ChatService.client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-1.5-flash",
                     contents=prompt,
                 )
                 return response.text

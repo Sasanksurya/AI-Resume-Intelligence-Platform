@@ -23,7 +23,7 @@ class AIService:
             try:
 
                 response = AIService.client.models.generate_content(
-                    model="gemini-2.5-flash",
+                    model="gemini-1.5-flash",
                     contents=prompt,
                 )
 
@@ -33,18 +33,15 @@ class AIService:
 
                 error = str(e)
 
-                # Retry temporary server errors
                 if "503" in error and attempt < retries - 1:
                     time.sleep(5)
                     continue
 
-                # API quota exceeded
                 if "429" in error or "RESOURCE_EXHAUSTED" in error:
                     raise Exception(
                         "Gemini API quota exceeded. Please try again later."
                     )
 
-                # Invalid API Key
                 if "401" in error or "API_KEY" in error:
                     raise Exception(
                         "Invalid Gemini API Key."

@@ -1,9 +1,8 @@
 import os
 import json
 import time
-
+from groq import Groq
 from dotenv import load_dotenv
-from google import genai
 
 from app.services.rag_service import RAGService
 from app.services.vector_store import VectorStoreService
@@ -13,9 +12,7 @@ load_dotenv()
 
 class ATSService:
 
-    client = genai.Client(
-        api_key=os.getenv("GOOGLE_API_KEY")
-    )
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     @staticmethod
     def analyze(job_description: str):
@@ -35,9 +32,7 @@ class ATSService:
                 "ats_score": 0,
                 "matched_skills": [],
                 "missing_skills": [],
-                "suggestions": [
-                    "Please upload your resume first before running ATS analysis."
-                ]
+                "suggestions": ["Please upload your resume first."]
             }
 
         prompt = f"""
@@ -51,9 +46,7 @@ Resume:
 Job Description:
 {job_description}
 
-Return ONLY valid JSON.
-
-Example:
+Return ONLY valid JSON, no extra text:
 
 {{
   "ats_score": 85,
@@ -65,22 +58,21 @@ Example:
       "Quantify achievements."
   ]
 }}
-
-Return ONLY JSON.
 """
 
         retries = 3
 
         for attempt in range(retries):
-
             try:
-
-                response = ATSService.client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=prompt,
+                response = ATSService.client.chat.completions.create(
+                    model="llama3-70b-8192",
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=1024,
                 )
 
-                text = response.text.strip()
+                text = response.choices[0].message.content.strip()
 
                 if text.startswith("```json"):
                     text = text.replace("```json", "").replace("```", "").strip()
@@ -101,7 +93,7 @@ Return ONLY JSON.
                     "ats_score": 0,
                     "matched_skills": [],
                     "missing_skills": [],
-                    "suggestions": ["Gemini returned invalid JSON."]
+                    "suggestions": ["AI returned invalid response. Try again."]
                 }
 
             except Exception as e:

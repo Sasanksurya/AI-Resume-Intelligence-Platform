@@ -1,8 +1,7 @@
 import os
 import time
-
+from groq import Groq
 from dotenv import load_dotenv
-from google import genai
 
 from app.services.rag_service import RAGService
 from app.services.vector_store import VectorStoreService
@@ -12,9 +11,7 @@ load_dotenv()
 
 class ChatService:
 
-    client = genai.Client(
-        api_key=os.getenv("GOOGLE_API_KEY")
-    )
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
     @staticmethod
     def ask(question: str):
@@ -51,15 +48,18 @@ Rules:
 
         for attempt in range(retries):
             try:
-                response = ChatService.client.models.generate_content(
-                    model="gemini-1.5-flash",
-                    contents=prompt,
+                response = ChatService.client.chat.completions.create(
+                    model="llama3-70b-8192",
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=1024,
                 )
-                return response.text
+                return response.choices[0].message.content
 
             except Exception as e:
                 error = str(e)
                 if "503" in error and attempt < retries - 1:
                     time.sleep(5)
                     continue
-                return f"Gemini API Error: {error}"
+                return f"AI Error: {error}"

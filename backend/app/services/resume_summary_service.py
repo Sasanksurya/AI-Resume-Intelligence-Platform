@@ -1,20 +1,24 @@
+import os
 import json
+from groq import Groq
+from dotenv import load_dotenv
 
 from app.services.rag_service import RAGService
-from app.services.ai_service import AIService
 from app.services.vector_store import VectorStoreService
+
+load_dotenv()
 
 
 class ResumeSummaryService:
 
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
     @staticmethod
     def generate_summary():
 
-        # Use full resume text directly for better name extraction
         full_text = VectorStoreService.load_resume_text()
 
         if not full_text.strip():
-            # Fallback to RAG search
             queries = [
                 "name email phone contact",
                 "skills programming languages tools",
@@ -43,24 +47,18 @@ class ResumeSummaryService:
 
             full_text = "\n\n".join(doc.page_content for doc in all_docs)
 
-        # Use first 3000 characters — name is always near the top
-        top_section = full_text[:3000]
-
         prompt = f"""
 You are an AI Resume Parser.
 
 Extract the following from this resume text.
 
-Resume (first section):
-{top_section}
-
-Full Resume:
+Resume:
 {full_text[:6000]}
 
-Important instructions:
-- "name": The person's full name. It is the VERY FIRST line or the largest text at the top of the resume. Look at the absolute beginning of the text.
-- "skills": All technical skills, tools, programming languages mentioned anywhere.
-- "experience": All work experience and internships with company names and dates.
+Instructions:
+- "name": The person's full name at the very top of the resume.
+- "skills": All technical skills, tools, programming languages.
+- "experience": All work experience and internships.
 - "education": Degree, college name, graduation year.
 
 Return ONLY valid JSON, no extra text:
@@ -74,19 +72,27 @@ Return ONLY valid JSON, no extra text:
 """
 
         try:
-            response = AIService.generate(prompt)
+            response = ResumeSummaryService.client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=2048,
+            )
 
-            if response.startswith("```json"):
-                response = response.replace("```json", "").replace("```", "").strip()
-            elif response.startswith("```"):
-                response = response.replace("```", "").strip()
+            text = response.choices[0].message.content.strip()
 
-            return json.loads(response)
+            if text.startswith("```json"):
+                text = text.replace("```json", "").replace("```", "").strip()
+            elif text.startswith("```"):
+                text = text.replace("```", "").strip()
+
+            return json.loads(text)
 
         except Exception as e:
             return {
                 "name": "Not Found",
                 "skills": [],
                 "experience": "AI API error.",
-                "education": "",
+                "education": "Not Found",
             }

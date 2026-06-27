@@ -9,18 +9,13 @@ from app.services.vector_store import VectorStoreService
 
 router = APIRouter()
 
-UPLOAD_FOLDER = Path("uploads")
+UPLOAD_FOLDER = Path("/tmp/uploads")
 UPLOAD_FOLDER.mkdir(exist_ok=True)
 
 
 @router.post("/upload")
 async def upload_resume(file: UploadFile = File(...)):
-    """
-    Upload resume, extract text, create embeddings,
-    create FAISS index and save it.
-    """
 
-    # Validate PDF
     if not PDFService.validate_pdf(file.filename):
         raise HTTPException(
             status_code=400,
@@ -29,11 +24,9 @@ async def upload_resume(file: UploadFile = File(...)):
 
     file_path = UPLOAD_FOLDER / file.filename
 
-    # Save file
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Extract text
     extracted_text = PDFService.extract_text(str(file_path))
 
     if not extracted_text.strip():
@@ -42,13 +35,11 @@ async def upload_resume(file: UploadFile = File(...)):
             detail="No text found in the PDF."
         )
 
-    # Create chunks
+    # Save full text to disk so chat can use it even after memory reset
+    VectorStoreService.save_resume_text(extracted_text)
+
     chunks = ChunkService.create_chunks(extracted_text)
-
-    # Create FAISS vector database
     vector_db = VectorStoreService.create_vector_store(chunks)
-
-    # Save FAISS index
     VectorStoreService.save_vector_store(vector_db)
 
     return {

@@ -41,6 +41,8 @@ class CrewService:
                 model="groq/llama-3.3-70b-versatile",
                 api_key=os.getenv("GROQ_API_KEY"),
                 base_url="https://api.groq.com/openai/v1",
+                extra_headers={},
+                cache=False,
             )
 
             resume_analyzer = Agent(
@@ -50,6 +52,7 @@ class CrewService:
                 llm=llm,
                 verbose=False,
                 allow_delegation=False,
+                cache=False,
             )
 
             jd_matcher = Agent(
@@ -59,6 +62,7 @@ class CrewService:
                 llm=llm,
                 verbose=False,
                 allow_delegation=False,
+                cache=False,
             )
 
             ats_scorer = Agent(
@@ -68,6 +72,7 @@ class CrewService:
                 llm=llm,
                 verbose=False,
                 allow_delegation=False,
+                cache=False,
             )
 
             career_coach = Agent(
@@ -77,6 +82,7 @@ class CrewService:
                 llm=llm,
                 verbose=False,
                 allow_delegation=False,
+                cache=False,
             )
 
             task_analyze = Task(
@@ -146,9 +152,9 @@ class CrewService:
                 tasks=[task_analyze, task_match, task_score, task_advice],
                 process=Process.sequential,
                 verbose=False,
+                cache=False,
             )
 
-            # Run in thread to avoid event loop conflict with FastAPI
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(crew.kickoff)
                 future.result(timeout=120)

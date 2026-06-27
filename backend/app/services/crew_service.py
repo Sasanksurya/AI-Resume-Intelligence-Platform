@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import concurrent.futures
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -147,7 +148,10 @@ class CrewService:
                 verbose=False,
             )
 
-            crew.kickoff()
+            # Run in thread to avoid event loop conflict with FastAPI
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(crew.kickoff)
+                future.result(timeout=120)
 
             score_output = task_score.output.raw if task_score.output else ""
             advice_output = task_advice.output.raw if task_advice.output else ""

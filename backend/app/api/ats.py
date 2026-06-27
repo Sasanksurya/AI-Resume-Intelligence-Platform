@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
 
 from app.services.ats_service import ATSService
 from app.services.crew_service import CrewService
@@ -34,8 +35,7 @@ class CrewATSResponse(BaseModel):
 @router.post("/ats-score", response_model=ATSResponse)
 async def ats_score(request: ATSRequest):
     """
-    Compare uploaded resume with a Job Description
-    and generate an ATS score using single AI call.
+    Fast ATS analysis using single AI call.
     """
     result = ATSService.analyze(request.job_description)
     return ATSResponse(**result)
@@ -47,11 +47,13 @@ async def ats_score(request: ATSRequest):
 @router.post("/ats-score-crew", response_model=CrewATSResponse)
 async def ats_score_crew(request: ATSRequest):
     """
-    Deep ATS analysis using 4 CrewAI agents:
-    - Resume Analyzer
-    - JD Matcher
-    - ATS Scorer
-    - Career Coach
+    Deep ATS analysis using 4 CrewAI agents.
+    Runs in thread executor to avoid event loop conflicts.
     """
-    result = CrewService.analyze_resume_with_jd(request.job_description)
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(
+        None,
+        CrewService.analyze_resume_with_jd,
+        request.job_description
+    )
     return CrewATSResponse(**result)

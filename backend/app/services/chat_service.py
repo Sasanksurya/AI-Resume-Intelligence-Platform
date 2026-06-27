@@ -21,7 +21,7 @@ class ChatService:
         docs = RAGService.search(question)
 
         if not docs:
-            return "No relevant resume information found."
+            return "Please upload your resume first before asking questions."
 
         context = "\n\n".join(doc.page_content for doc in docs)
 

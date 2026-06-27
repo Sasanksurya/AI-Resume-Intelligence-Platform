@@ -1,16 +1,10 @@
-import os
-from dotenv import load_dotenv
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
-load_dotenv()
-
-print("GOOGLE_API_KEY =", os.getenv("GOOGLE_API_KEY"))
 
 class EmbeddingService:
 
-    embeddings = GoogleGenerativeAIEmbeddings(
-        model="models/gemini-embedding-001",
-        google_api_key=os.getenv("GOOGLE_API_KEY"),
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
     @staticmethod

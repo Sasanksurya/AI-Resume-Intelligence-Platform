@@ -120,7 +120,7 @@ export default function ATSSection() {
               </svg>
               Analyzing...
             </span>
-          ) : "⚡ Quick Analysis"}
+          ) : "Quick Analysis"}
         </button>
 
         {/* CrewAI Deep Analysis Button */}
@@ -137,7 +137,7 @@ export default function ATSSection() {
               </svg>
               4 Agents Working... (30s)
             </span>
-          ) : "🤖 Deep Analysis with CrewAI"}
+          ) : "Deep Analysis with CrewAI"}
         </button>
 
       </div>
@@ -145,7 +145,7 @@ export default function ATSSection() {
       {/* CrewAI badge */}
       {isCrewResult && result && (
         <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-purple-900 px-4 py-1 text-sm text-purple-300">
-          <span>🤖</span>
+          <span> </span>
           <span>Powered by CrewAI — 4 Agents collaborated on this analysis</span>
         </div>
       )}
@@ -180,7 +180,7 @@ export default function ATSSection() {
           {/* Matched Skills */}
           <div className="rounded-xl bg-slate-800 p-6">
             <h3 className="text-xl font-bold text-green-400">
-              ✅ Matched Skills ({result.matched_skills.length})
+              Matched Skills ({result.matched_skills.length})
             </h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {result.matched_skills.map((skill, index) => (
@@ -197,7 +197,7 @@ export default function ATSSection() {
           {/* Missing Skills */}
           <div className="rounded-xl bg-slate-800 p-6">
             <h3 className="text-xl font-bold text-red-400">
-              ❌ Missing Skills ({result.missing_skills.length})
+              Missing Skills ({result.missing_skills.length})
             </h3>
             <div className="mt-3 flex flex-wrap gap-2">
               {result.missing_skills.map((skill, index) => (
@@ -214,7 +214,7 @@ export default function ATSSection() {
           {/* Suggestions */}
           <div className="rounded-xl bg-slate-800 p-6">
             <h3 className="text-xl font-bold text-yellow-400">
-              💡 Suggestions
+              Suggestions
             </h3>
             <ul className="mt-3 space-y-2">
               {result.suggestions.map((item, index) => (
@@ -230,7 +230,7 @@ export default function ATSSection() {
           {isCrewResult && result.career_advice && (
             <div className="rounded-xl border border-purple-700 bg-purple-950 p-6">
               <h3 className="text-xl font-bold text-purple-300">
-                🎯 Career Coach Advice
+                Career Coach Advice
               </h3>
               <p className="mt-3 whitespace-pre-wrap text-slate-300 leading-relaxed">
                 {result.career_advice}

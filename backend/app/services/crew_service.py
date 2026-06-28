@@ -1,21 +1,36 @@
 import os
 import json
 import re
-import concurrent.futures
+from groq import Groq
 from dotenv import load_dotenv
+from app.services.vector_store import VectorStoreService
+from app.services.rag_service import RAGService
 
 load_dotenv()
 
 
 class CrewService:
 
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+    @staticmethod
+    def _call_agent(system_role: str, task: str) -> str:
+        try:
+            response = CrewService.client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": system_role},
+                    {"role": "user", "content": task},
+                ],
+                max_tokens=1500,
+            )
+            return response.choices[0].message.content.strip()
+        except Exception as e:
+            return f"Agent error: {str(e)}"
+
     @staticmethod
     def analyze_resume_with_jd(job_description: str):
         try:
-            from crewai import Agent, Task, Crew, Process, LLM
-            from app.services.vector_store import VectorStoreService
-            from app.services.rag_service import RAGService
-
             resume_text = VectorStoreService.load_resume_text()
 
             if not resume_text.strip():
@@ -35,58 +50,12 @@ class CrewService:
                     "crew_analysis": ""
                 }
 
-            os.environ["GROQ_API_KEY"] = os.getenv("GROQ_API_KEY", "")
-
-            llm = LLM(
-                model="groq/llama-3.3-70b-versatile",
-                api_key=os.getenv("GROQ_API_KEY"),
-                base_url="https://api.groq.com/openai/v1",
-                extra_headers={},
-                cache=False,
-            )
-
-            resume_analyzer = Agent(
-                role="Resume Analyzer",
-                goal="Extract all key information from the resume",
-                backstory="You are an expert HR professional with 15 years of experience reading resumes.",
-                llm=llm,
-                verbose=False,
-                allow_delegation=False,
-                cache=False,
-            )
-
-            jd_matcher = Agent(
-                role="Job Description Matcher",
-                goal="Compare resume against job description and identify matches and gaps",
-                backstory="You are a technical recruiter who matches candidates to job descriptions.",
-                llm=llm,
-                verbose=False,
-                allow_delegation=False,
-                cache=False,
-            )
-
-            ats_scorer = Agent(
-                role="ATS Score Calculator",
-                goal="Calculate accurate ATS score based on keyword matching",
-                backstory="You are an ATS system expert who calculates scores based on keyword density and skill matches.",
-                llm=llm,
-                verbose=False,
-                allow_delegation=False,
-                cache=False,
-            )
-
-            career_coach = Agent(
-                role="Career Coach",
-                goal="Provide actionable resume improvement suggestions",
-                backstory="You are a senior career coach who gives specific advice to improve resumes.",
-                llm=llm,
-                verbose=False,
-                allow_delegation=False,
-                cache=False,
-            )
-
-            task_analyze = Task(
-                description=f"""
+            # ============================================================
+            # Agent 1: Resume Analyzer
+            # ============================================================
+            agent1_output = CrewService._call_agent(
+                system_role="You are an expert HR professional with 15 years of experience reading resumes. Extract key information accurately.",
+                task=f"""
                 Analyze this resume and extract:
                 1. All technical skills
                 2. Work experience summary
@@ -95,99 +64,95 @@ class CrewService:
 
                 Resume:
                 {resume_text[:3000]}
-                """,
-                expected_output="Structured summary of resume with skills, experience, education, achievements.",
-                agent=resume_analyzer,
+                """
             )
 
-            task_match = Task(
-                description=f"""
-                Compare the resume against this job description.
+            # ============================================================
+            # Agent 2: JD Matcher
+            # ============================================================
+            agent2_output = CrewService._call_agent(
+                system_role="You are a technical recruiter who specializes in matching candidates to job descriptions.",
+                task=f"""
+                Based on this resume analysis:
+                {agent1_output[:1000]}
 
-                Job Description:
+                Compare against this Job Description:
                 {job_description[:2000]}
 
-                Identify matched skills, missing skills, and experience level match.
-                """,
-                expected_output="List of matched skills, missing skills, and experience assessment.",
-                agent=jd_matcher,
-                context=[task_analyze],
+                List:
+                1. Skills that match
+                2. Skills missing from resume
+                3. Experience level assessment
+                """
             )
 
-            task_score = Task(
-                description=f"""
-                Calculate ATS score from 0-100 based on resume vs job description match.
+            # ============================================================
+            # Agent 3: ATS Scorer
+            # ============================================================
+            agent3_output = CrewService._call_agent(
+                system_role="You are an ATS expert. You ONLY respond with valid JSON. No extra text.",
+                task=f"""
+                Based on this matching analysis:
+                {agent2_output[:1000]}
 
-                Job Description:
-                {job_description[:1000]}
-
-                Return ONLY this JSON format:
+                Calculate ATS score and return ONLY this JSON:
                 {{
                     "ats_score": 75,
-                    "matched_skills": ["Python", "FastAPI"],
+                    "matched_skills": ["Python", "FastAPI", "SQL"],
                     "missing_skills": ["Docker", "Kubernetes"]
                 }}
-                """,
-                expected_output="JSON with ats_score, matched_skills, missing_skills.",
-                agent=ats_scorer,
-                context=[task_analyze, task_match],
+                """
             )
 
-            task_advice = Task(
-                description=f"""
-                Give 5 specific suggestions to improve the resume for this role.
+            # ============================================================
+            # Agent 4: Career Coach
+            # ============================================================
+            agent4_output = CrewService._call_agent(
+                system_role="You are a senior career coach who gives specific actionable resume advice.",
+                task=f"""
+                Based on this resume vs job description analysis:
+                {agent2_output[:1000]}
+
+                Give 5 specific actionable suggestions to improve the resume for this role.
+                Be specific and practical.
 
                 Job Description:
-                {job_description[:1000]}
-
-                Give clear actionable bullet points.
-                """,
-                expected_output="5 specific actionable suggestions to improve resume.",
-                agent=career_coach,
-                context=[task_analyze, task_match, task_score],
+                {job_description[:500]}
+                """
             )
 
-            crew = Crew(
-                agents=[resume_analyzer, jd_matcher, ats_scorer, career_coach],
-                tasks=[task_analyze, task_match, task_score, task_advice],
-                process=Process.sequential,
-                verbose=False,
-                cache=False,
-            )
-
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(crew.kickoff)
-                future.result(timeout=120)
-
-            score_output = task_score.output.raw if task_score.output else ""
-            advice_output = task_advice.output.raw if task_advice.output else ""
-
-            json_match = re.search(r'\{.*?\}', score_output, re.DOTALL)
+            # Parse ATS score from Agent 3
+            json_match = re.search(r'\{.*?\}', agent3_output, re.DOTALL)
             if json_match:
-                data = json.loads(json_match.group())
-                ats_score = int(data.get("ats_score", 0))
-                matched_skills = data.get("matched_skills", [])
-                missing_skills = data.get("missing_skills", [])
+                try:
+                    data = json.loads(json_match.group())
+                    ats_score = int(data.get("ats_score", 0))
+                    matched_skills = data.get("matched_skills", [])
+                    missing_skills = data.get("missing_skills", [])
+                except Exception:
+                    ats_score = 0
+                    matched_skills = []
+                    missing_skills = []
             else:
                 ats_score = 0
                 matched_skills = []
                 missing_skills = []
 
+            # Parse suggestions from Agent 4
             suggestions = []
-            if advice_output:
-                for line in advice_output.split("\n"):
-                    line = line.strip().lstrip("0123456789.-) ")
-                    if len(line) > 20:
-                        suggestions.append(line)
-                suggestions = suggestions[:6]
+            for line in agent4_output.split("\n"):
+                line = line.strip().lstrip("0123456789.-) *")
+                if len(line) > 20:
+                    suggestions.append(line)
+            suggestions = suggestions[:6]
 
             return {
                 "ats_score": ats_score,
                 "matched_skills": matched_skills,
                 "missing_skills": missing_skills,
                 "suggestions": suggestions,
-                "career_advice": advice_output[:1500] if advice_output else "",
-                "crew_analysis": ""
+                "career_advice": agent4_output[:1500],
+                "crew_analysis": f"Agent 1 (Resume Analyzer) → Agent 2 (JD Matcher) → Agent 3 (ATS Scorer) → Agent 4 (Career Coach)"
             }
 
         except Exception as e:
@@ -195,7 +160,7 @@ class CrewService:
                 "ats_score": 0,
                 "matched_skills": [],
                 "missing_skills": [],
-                "suggestions": [f"CrewAI Error: {str(e)}"],
+                "suggestions": [f"Error: {str(e)}"],
                 "career_advice": "",
                 "crew_analysis": ""
             }

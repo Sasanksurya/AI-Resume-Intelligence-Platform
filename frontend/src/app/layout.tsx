@@ -14,28 +14,68 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexaura",
+  title: "Nexaura — AI Resume Intelligence Platform",
   description:
-    "Nexaura is an AI-powered resume analysis platform that helps job seekers optimize resumes, analyze ATS scores, compare resumes with job descriptions, and chat with their resumes using AI.",
+    "Nexaura is an AI-powered resume intelligence platform. Upload your resume, get ATS score, chat with AI about your resume, deep analysis with 4-agent AI pipeline, interview preparation, and career coaching. Built with FastAPI, Next.js, LangChain, FAISS, and Groq AI.",
   keywords: [
     "Nexaura",
-    "Resume Analyzer",
+    "AI Resume Analyzer",
     "ATS Score",
     "Resume Chat",
     "Resume Optimization",
-    "AI Resume",
+    "AI Resume Platform",
     "Job Match Analysis",
     "Career Assistant",
     "Resume Builder",
     "AI Career Platform",
+    "LangChain",
+    "FAISS",
+    "RAG Pipeline",
+    "FastAPI",
+    "Resume Intelligence",
+    "ATS Analyzer",
+    "Resume ATS Score",
+    "AI Job Application",
+    "Career Coach AI",
+    "Interview Preparation AI",
+    "Sasank Surya Thota",
   ],
   authors: [
     {
-      name: "Shashank Surya Thota",
+      name: "Sasank Surya Thota",
     },
   ],
-  creator: "Shashank Surya Thota",
+  creator: "Sasank Surya Thota",
   applicationName: "Nexaura",
+  verification: {
+    google: "GyYAts8-C8CFMMGEPlRlS3rFjrn2jlf28nZNpQfQfCg",
+  },
+  openGraph: {
+    title: "Nexaura — AI Resume Intelligence Platform",
+    description:
+      "Upload your resume and get instant AI analysis, ATS score, career coaching, and interview preparation powered by RAG pipeline and 4-agent AI system.",
+    url: "https://ai-resume-intelligence-platform-two.vercel.app",
+    siteName: "Nexaura",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nexaura — AI Resume Intelligence Platform",
+    description:
+      "Upload your resume and get instant AI analysis, ATS score, career coaching, and interview preparation powered by RAG pipeline and 4-agent AI system.",
+    creator: "@sasanksurya",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  alternates: {
+    canonical: "https://ai-resume-intelligence-platform-two.vercel.app",
+  },
 };
 
 export default function RootLayout({

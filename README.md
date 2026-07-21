@@ -7,6 +7,12 @@ A production-grade, full-stack AI Resume Intelligence Platform that analyzes res
 - Frontend: https://ai-resume-intelligence-platform-two.vercel.app
 - Backend API: https://ai-resume-intelligence-platform-api.onrender.com
 
+
+# Nexaura — AI Resume Intelligence Platform
+
+🔗 **[Live Demo](https://ai-resume-intelligence-platform-two.vercel.app/)**
+
+Upload your resume, get instant AI-powered ATS scoring, JD matching, and career insights through a 4-agent AI pipeline.
 ## Features
 
 - Resume Upload — Upload PDF resume and extract text automatically
